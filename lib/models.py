@@ -35,6 +35,12 @@ class Restaurants(Base):
     customers = association_proxy('reviews', 'customer', 
         creator = lambda cu: Reviews(customer = cu))
 
+    def reviews(self):
+        return self.reviews
+
+    def customers(self):
+        return [review.customer for review in self.reviews]
+
 
 
 class Customers(Base):
@@ -47,6 +53,12 @@ class Customers(Base):
     reviews = relationship('Reviews', back_populates='customer')
     restaurants = association_proxy('reviews', 'restaurant',
         creator=lambda re: Reviews(restaurant = re))
+
+    def reviews(self):
+        return self.reviews
+
+    def restaurants(self):
+        return [review.restaurant for review in self.reviews]
 
 
 class Reviews(Base):
@@ -63,3 +75,9 @@ class Reviews(Base):
 
     def __repr__(self):
         return f"id={self.id}, rating = {self.star_rating} customer={self.customer_id} for restaurant::{self.restaurant_id}"
+
+    def customer(self):
+        return self.customer
+
+    def restaurant(self):
+        return self.restaurant
