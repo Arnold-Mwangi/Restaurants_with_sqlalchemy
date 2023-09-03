@@ -1,5 +1,7 @@
-from sqlalchemy import create_engine, Integer, Column, Index, Table, String, Foreignkey, DateTime, MetaData, func
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import create_engine, func
+from sqlalchemy import ForeignKey, Table, Column, Integer, String, DateTime, MetaData
+from sqlalchemy.orm import relationship, backref, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
 
 convention = {
