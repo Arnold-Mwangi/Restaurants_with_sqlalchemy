@@ -33,7 +33,7 @@ class Restaurants(Base):
 
     reviews = relationship('Reviews', back_populates='restaurant')
     customers = association_proxy('reviews', 'customer', 
-        creator = lambda cu: Reviews(customer = us))
+        creator = lambda cu: Reviews(customer = cu))
 
 
 
@@ -44,16 +44,16 @@ class Customers(Base):
     first_name = Column(String)
     last_name = Column(String)
 
-    reviews = relationship('Review', back_populates='customer')
+    reviews = relationship('Reviews', back_populates='customer')
     restaurants = association_proxy('reviews', 'restaurant',
-        creator=lambda re: Review(restaurant = re))
+        creator=lambda re: Reviews(restaurant = re))
 
 
 class Reviews(Base):
     __tablename__ = 'reviews'
 
     id=Column(Integer(), primary_key=True)
-    star_rating=Column(Integer)
+    star_rating=Column(Integer())
     restaurant_id = Column(Integer(), ForeignKey('restaurants.id'))
     customer_id = Column(Integer(), ForeignKey('customers.id'))
 
