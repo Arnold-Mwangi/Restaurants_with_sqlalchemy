@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, func
 from sqlalchemy import ForeignKey, Table, Column, Integer, String, DateTime, MetaData
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.associationproxy import association_proxy
 
 
 convention = {
@@ -18,6 +19,8 @@ engine = create_engine('sqlite:///restaurants.db')
 Session = sessionmaker(bind = engine)
 session = Session()
 
+
+
 class Restaurants(Base):
     __tablename__ = 'restaurants'
 
@@ -28,6 +31,10 @@ class Restaurants(Base):
     def __repr__(self):
         return f"name:: {self.name}: price::{self.price}"
 
+    reviews = relationship('Reviews', back_populates='restaurant')
+    customers = association_proxy('reviews', 'customer', 
+        creator = lambda cu: Reviews(customer = us))
+
 
 
 class Customers(Base):
@@ -36,3 +43,23 @@ class Customers(Base):
     id = Column(Integer, primary_key=True)
     first_name = Column(String)
     last_name = Column(String)
+
+    reviews = relationship('Review', back_populates='customer')
+    restaurants = association_proxy('reviews', 'restaurant',
+        creator=lambda re: Review(restaurant = re))
+
+
+class Reviews(Base):
+    __tablename__ = 'reviews'
+
+    id=Column(Integer(), primary_key=True)
+    star_rating=Column(Integer)
+    restaurant_id = Column(Integer(), ForeignKey('restaurants.id'))
+    customer_id = Column(Integer(), ForeignKey('customers.id'))
+
+    restaurant = relationship('Restaurants', back_populates='reviews')
+    customer = relationship('Customers', back_populates='reviews')
+
+
+    def __repr__(self):
+        return f"id={self.id}, rating = {self.star_rating} customer={self.customer_id} for restaurant::{self.restaurant_id}"
