@@ -28,20 +28,30 @@ class Restaurant(Base):
     name = Column(String)
     price=Column(Integer)
 
-    # def __repr__(self):
-    #     return f"name:: {self.name}: price::{self.price}"
+    def __repr__(self):
+        return f"name:: {self.name}: price::{self.price}"
 
     reviews = relationship('Review', back_populates='restaurant')
     customers = association_proxy('reviews', 'customer', 
-        creator = lambda cu: Reviews(customer = cu))
+        creator = lambda cu: Review(customer = cu))
 
     def reviews(self):
-        # query = session.query(Reviews)
-        # print((query))
-        return self.reviews
+        return session.query(Review).filter_by(restaurant_id=self.id).all()
 
     def customers(self):
-        return self.customers
+        reviews = self.reviews()
+        return [review.customer() for review in reviews]
+
+    @classmethod
+    def fanciest(cls):
+        return session.query(cls).order_by(desc(cls.price)).first()
+
+    def all_reviews(self):
+        reviews = self.reviews
+        review_strings = []
+        for review in reviews:
+            review_strings.append(review.full_review())
+        return review_strings
 
 
 
@@ -54,13 +64,40 @@ class Customer(Base):
 
     reviews = relationship('Review', back_populates='customer')
     restaurants = association_proxy('reviews', 'restaurant',
-        creator=lambda re: Reviews(restaurant = re))
+        creator=lambda re: Review(restaurant = re))
 
+    def __repr__ (self):
+        return f"First-name:: {self.first_name}, Lastname: {self.last_name}"
+    
     def reviews(self):
-        return self.reviews
+        return session.query(Review).filter_by(customer_id=self.id).all()
 
     def restaurants(self):
-        return [review.restaurant for review in self.reviews]
+        reviews = self.reviews()
+        return [review.restaurant() for review in reviews]
+
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'
+
+    def favorite_restaurant(self):
+        # Assuming you have a relationship between Customer and Review through 'reviews'
+        reviews = self.reviews
+        if reviews:
+            highest_rated_review = max(reviews, key=lambda review: review.star_rating)
+            return highest_rated_review.restaurant
+        return None
+
+    def add_review(self, restaurant, rating):
+        new_review = Review(customer=self, restaurant=restaurant, star_rating=rating)
+        session.add(new_review)
+        session.commit()
+
+    def delete_reviews(self, restaurant):
+        # Assuming you have a relationship between Customer and Review through 'reviews'
+        reviews_to_delete = [review for review in self.reviews if review.restaurant == restaurant]
+        for review in reviews_to_delete:
+            session.delete(review)
+        session.commit()
 
 
 class Review(Base):
@@ -79,11 +116,12 @@ class Review(Base):
         return f"id={self.id}, rating = {self.star_rating} customer={self.customer_id} for restaurant::{self.restaurant_id}"
 
     def customer(self):
-        query = session.query(Customer).filter_by(id = self.customer_id).first()
-        return query
+        return session.query(Customer).filter_by(id=self.customer_id).first()
 
     def restaurant(self):
-        return self.restaurant
+        return session.query(Restaurant).filter_by(id=self.restaurant_id).first()
+
+    def full_review(self):
+        return f'Review for {self.restaurant.name} by {self.customer.full_name()}: {self.star_rating} stars.'
 
 
-review1 = Review()
